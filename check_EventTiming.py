@@ -11,13 +11,14 @@ import scipy.signal as signal
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
-filenamepath = 'K:\\ViconDatabase\\Python Code\\1. readC3D_local\\C3D test files\\TD05MINa03.c3d'
-dir_mk = 'X'
+# filenamepath = 'K:\\ViconDatabase\\Python Code\\1. readC3D_local\\C3D test files\\TD05MINa03.c3d'
+# dir_mk = 'X'
 
-def get_EventDiffs(filenamepath, dir_mk):
+def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source):
 
-    def calc_FootOffEventsVel(mk_vel, vfr, ax):
+    def calc_FootOffEventsVel(mk_vel, vfr, ax, markers):
         '''
         Assumption is that foot-off occurs at (about) the peak of the summed marker 
         velocities of the 3 foot markers in the Z-direction for typical heel-toe 
@@ -27,8 +28,8 @@ def get_EventDiffs(filenamepath, dir_mk):
         mkZ_vel = mk_vel[mk_vel['Coordinate'] == 'Z'].copy()
         
         # Extract trajectory signal
-        left_signal = mkZ_vel['LMT1H'] + mkZ_vel['LANK'] + mkZ_vel['LHEE']
-        right_signal = mkZ_vel['RMT1H'] + mkZ_vel['RANK'] + mkZ_vel['RHEE']
+        left_signal = mkZ_vel[markers[0]] + mkZ_vel[markers[1]] + mkZ_vel[markers[2]]
+        right_signal = mkZ_vel[markers[3]] + mkZ_vel[markers[4]] + mkZ_vel[markers[5]]
     
         # height must be at least .5 * max
         Lpeaks, _ = signal.find_peaks(left_signal, 
@@ -79,8 +80,8 @@ def get_EventDiffs(filenamepath, dir_mk):
         frame   = mk_vel[mk_vel['Coordinate'] == 'X']['Frame']
         
         # pull heel markers for each foot
-        Lheel   = mk_vel[mk_vel['Coordinate'] == 'X']['LHEE']
-        Rheel   = mk_vel[mk_vel['Coordinate'] == 'X']['RHEE']
+        Lheel   = mk_vel[mk_vel['Coordinate'] == 'X'][markers[2]]
+        Rheel   = mk_vel[mk_vel['Coordinate'] == 'X'][markers[5]]
         
         # find minThresh% of the max mean absolute X-velocity for each limb
         # foot velocity foot contact threshold - where marker is near zero in x-direction
@@ -159,7 +160,8 @@ def get_EventDiffs(filenamepath, dir_mk):
     # --------------------------- Extract C3D data --------------------------------
     # 'getData' is an optional input. If not input, default is all data will be extracted
     C3Ddict = pyc3d.get_C3Ddata(filenamepath)
-    
+    subject = C3Ddict['C3D File Name']
+    print(subject)
     ###############################################################################
     # --------------------------- Pull force data ---------------------------------
     # Force plate data
@@ -197,7 +199,11 @@ def get_EventDiffs(filenamepath, dir_mk):
     ###############################################################################
     # --------------------------- Pull marker data --------------------------------
     mk_df       = C3Ddict['Marker Data']
-    markers     = ['LMT1H','LANK','LHEE','RMT1H','RANK','RHEE']
+    if data_source == 'TD':
+        markers = ['LMT1H','LANK','LHEE','RMT1H','RANK','RHEE']
+    else:
+        markers = ['Left_2nd3rd_MT_Head','LANK','Left_Heel','Right_2nd3rd_MT_Head','RANK','Right_Heel']
+        
     coordinates = ['X','Z']
     event_ind   = ['On','Off']
     
@@ -233,8 +239,6 @@ def get_EventDiffs(filenamepath, dir_mk):
     axes1[0].set_xticklabels([])
     
     mk_vel = pd.DataFrame()
-    # mk_vel['Time'] = vtime
-    # mk_vel['Frame'] = list(video_frames)
     
     # plot foot marker data
     for idx, coordinate in enumerate(coordinates):
@@ -261,12 +265,12 @@ def get_EventDiffs(filenamepath, dir_mk):
     
     ###############################################################################
     # ------------------------- Pull events and trim ------------------------------
-    minThresh = 0.4 # minimum foot marker velocity threshold is 5% below max average marker velocity
+    minThresh = x_thresh # minimum foot marker velocity threshold is 5% below max average marker velocity
     
     # Gold standard events from file
     gce                 = C3Ddict['Gait Cycle Events']
     events_gold         = gce[['Contexts','Labels','Times','Frames']].copy()
-    events_mk_off       = calc_FootOffEventsVel(mk_vel, vfr, axes1[3])
+    events_mk_off       = calc_FootOffEventsVel(mk_vel, vfr, axes1[3], markers)
     events_mk_on        = calc_FootOnEventsVel(mk_vel, vfr, axes1[1], direction, minThresh)
     events_force        = calc_ForceEvents(fp_df, 10) # dataframe and force threshold
     
@@ -317,7 +321,7 @@ def get_EventDiffs(filenamepath, dir_mk):
     # ------------------------- Add lines for events ------------------------------
     fmin = min(meltFP_df['Force_Z'])
     fmax = max(meltFP_df['Force_Z'])
-    line_length = abs(fmax - fmin)
+    # line_length = abs(fmax - fmin)
     
     # Plot vertical lines for auto gait events
     for item, row in events_forceOffT.iterrows():
@@ -351,9 +355,10 @@ def get_EventDiffs(filenamepath, dir_mk):
     plt.show()
     
     # Replace 'output.pdf' with your desired PDF filename
-    subject = C3Ddict['C3D File Name']
+    # subject = C3Ddict['C3D File Name']
     png_filename = f'{subject}_Trajectory_Visualization.png'
-    fig1.savefig(png_filename, dpi=300, bbox_inches='tight')
+    save_png_path = os.path.join(save_folderpath, png_filename)
+    fig1.savefig(save_png_path, dpi=300, bbox_inches='tight')
     
     ###############################################################################
     # ------------------------- Plot only forces and events -----------------------
@@ -398,7 +403,8 @@ def get_EventDiffs(filenamepath, dir_mk):
     
     # Replace 'output.pdf' with your desired PDF filename
     png_filename = f'{subject}_Event_Comparison.png'
-    fig2.savefig(png_filename, dpi=300, bbox_inches='tight')
+    save_png_path = os.path.join(save_folderpath, png_filename)
+    fig2.savefig(save_png_path, dpi=300, bbox_inches='tight')
     
     ###############################################################################
     # --------------------------- Combine and calc event diff ---------------------
