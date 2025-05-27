@@ -8,6 +8,7 @@ Created on Tue Apr 15 12:33:22 2025
 import Py3_readC3D as pyc3d
 import numpy as np
 import scipy.signal as signal
+from scipy.fft import fft, fftfreq
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -18,7 +19,7 @@ import os
 
 def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source):
 
-    def calc_FootOffEventsVel(mk_vel, vfr, ax, markers):
+    def calc_FootOffEventsVel(mk_vel, vfr, ax, markers, sr):
         '''
         Assumption is that foot-off occurs at (about) the peak of the summed marker 
         velocities of the 3 foot markers in the Z-direction for typical heel-toe 
@@ -28,23 +29,44 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         mkZ_vel = mk_vel[mk_vel['Coordinate'] == 'Z'].copy()
         
         # Extract trajectory signal
-        left_signal = mkZ_vel[markers[0]] + mkZ_vel[markers[1]] + mkZ_vel[markers[2]]
-        right_signal = mkZ_vel[markers[3]] + mkZ_vel[markers[4]] + mkZ_vel[markers[5]]
+        left_signal = np.array(mkZ_vel[markers[0]] + mkZ_vel[markers[1]] + mkZ_vel[markers[2]])
+        right_signal = np.array(mkZ_vel[markers[3]] + mkZ_vel[markers[4]] + mkZ_vel[markers[5]])
     
-        # height must be at least .5 * max
-        Lpeaks, _ = signal.find_peaks(left_signal, 
-                                     # distance=int(peak_spacing / vfr),
-                                     height = 0.5 * max(left_signal))
+        # obtain summed signal dominant frequency to specify peak spacing parameter
+        N = len(left_signal)
+        # fft
+        fft_values = fft(left_signal)
+        frequencies = fftfreq(N, 1/sr)
+        # dominant frequency
+        idx = np.argmax(np.abs(fft_values[:N//2]))
+        dom_freq = frequencies[idx]
+        step_rate = int(sr/dom_freq)
         
-        Rpeaks, _ = signal.find_peaks(right_signal, 
-                                     # distance=int(peak_spacing / vfr),
-                                     height = 0.5 * max(right_signal))
+        
+        # height must be at least .5 * max
+        lpeaks, _ = signal.find_peaks(left_signal, 
+                                     height = 0.5 * max(left_signal),
+                                     # prominence=0.3,  # Filtering weaker peaks 
+                                     # distance=step_rate,  # Preventing step-rate violations 
+                                     # width=3  # Ignoring overly wide peaks
+                                     )
+        # only pull largest peaks within window of anticipated step rates
+        Lpeaks = [lpeak for lpeak in lpeaks if left_signal[lpeak] == max(left_signal[max(0, lpeak-round(step_rate/2)):min(len(left_signal), lpeak+round(step_rate/2))])]
+        
+        rpeaks, _ = signal.find_peaks(right_signal, 
+                                     height = 0.5 * max(right_signal),
+                                     # prominence=0.3,  # Filtering weaker peaks 
+                                     # distance=step_rate,  # Preventing step-rate violations 
+                                     # width=3  # Ignoring overly wide peaks
+                                     )
+        # only pull largest peaks within window of anticipated step rates
+        Rpeaks = [peak for peak in rpeaks if right_signal[peak] == max(right_signal[max(0, peak-round(step_rate/2)):min(len(right_signal), peak+round(step_rate/2))])]
         
         # Plot the results
         ax.plot(mkZ_vel['Time'], left_signal, label="Trajectory", color='blue')
-        ax.plot(mkZ_vel['Time'].iloc[Lpeaks], left_signal.iloc[Lpeaks], "bx")
+        ax.plot(mkZ_vel['Time'].iloc[Lpeaks], left_signal[Lpeaks], "bx")
         ax.plot(mkZ_vel['Time'], right_signal, label="Trajectory", color='red')
-        ax.plot(mkZ_vel['Time'].iloc[Rpeaks], right_signal.iloc[Rpeaks], "rx")
+        ax.plot(mkZ_vel['Time'].iloc[Rpeaks], right_signal[Rpeaks], "rx")
         ax.set_xlabel("Time")
         ax.set_ylabel("Trajectory")
         
@@ -128,19 +150,28 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         fp_cols = [colname for colname in fp_df.columns if colname != 'Time']
         forces_threshold = fp_df[fp_cols] < -threshold
         
-        # Find transitions    
-        Footstr_indexes = np.array(np.where((forces_threshold.shift(1, fill_value=False) == False) & (forces_threshold == True)))
-        FootOff_indexes = np.array(np.where((forces_threshold.shift(1, fill_value=False) == True) & (forces_threshold == False)))
+        # make sure True flags are present for at least 10 frames/rows
+        FSI = np.array(np.where((forces_threshold.shift(10, fill_value=False) == False) & (forces_threshold == True)))
+        FOI = np.array(np.where((forces_threshold.shift(10, fill_value=False) == True) & (forces_threshold == False)))
         
+        # this will pull the first index from the array of 10 frames where the above criteria is met
+        Footstr_indexes = []
+        for strIDX in range(0, max(FSI[1]) + 1):
+            Footstr_indexes.append(FSI[0][FSI[1] == strIDX].min())
+            
+        FootOff_indexes = []
+        for offIDX in range(0, max(FOI[1]) + 1):
+            FootOff_indexes.append(FOI[0][FOI[1] == offIDX].min())
+    
         # save times and frames to dictionary
-        num_FootOn      = len(Footstr_indexes[0])
-        num_FootOff     = len(FootOff_indexes[0])
+        num_FootOn      = len(Footstr_indexes)
+        num_FootOff     = len(FootOff_indexes)
         Onlabels        = ['Foot Strike'] * num_FootOn
         Offlabels       = ['Foot Off'] * num_FootOff
         labels          = Onlabels + Offlabels
-        times           = list(round(fp_df['Time'].iloc[Footstr_indexes[0]], 3)) + list(round(fp_df['Time'].iloc[FootOff_indexes[0]], 3))
-        fOn             = fp_df['VideoFrames'].iloc[Footstr_indexes[0]]
-        fOff            = fp_df['VideoFrames'].iloc[FootOff_indexes[0]]
+        times           = list(round(fp_df['Time'].iloc[Footstr_indexes], 3)) + list(round(fp_df['Time'].iloc[FootOff_indexes], 3))
+        fOn             = fp_df['VideoFrames'].iloc[Footstr_indexes]
+        fOff            = fp_df['VideoFrames'].iloc[FootOff_indexes]
         frames          = [int(onframe) for onframe in fOn] + [int(offframe) for offframe in fOff]
         source          = ['Force Plate'] * len(labels)
         
@@ -217,7 +248,10 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
     vtime = np.linspace(vstart, vstop, num=len(video_frames))
     
     # use C7 marker to determine walking direction
-    C7 = mk_df[mk_df['Coord'] == dir_mk]['C7']
+    try:
+        C7 = mk_df[mk_df['Coord'] == dir_mk]['C7']
+    except:
+        C7 = mk_df[mk_df['Coord'] == dir_mk]['C7VB']
     if C7.iloc[0] > C7.iloc[-1]:
         direction = True # currently unused
     else:
@@ -263,14 +297,23 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         
         mk_vel = pd.concat([mk_vel, mv], axis=0)
     
+    # need to check for and remove duplicate columns, where present
+    col_counts = mk_vel.columns.value_counts()
+    dup_columns = [dcol for dcol in mk_vel.columns if col_counts[dcol] > 1]
+    
+    # Remove only one instance when duplicates exist
+    if dup_columns:
+        mk_vel = mk_vel.loc[:, ~mk_vel.columns.duplicated(keep='first')]
+    
     ###############################################################################
     # ------------------------- Pull events and trim ------------------------------
     minThresh = x_thresh # minimum foot marker velocity threshold is 5% below max average marker velocity
     
     # Gold standard events from file
+    sr                  = C3Ddict['Parameter Group']['POINT']['RATE']['data'][0] # get point data sample rate
     gce                 = C3Ddict['Gait Cycle Events']
     events_gold         = gce[['Contexts','Labels','Times','Frames']].copy()
-    events_mk_off       = calc_FootOffEventsVel(mk_vel, vfr, axes1[3], markers)
+    events_mk_off       = calc_FootOffEventsVel(mk_vel, vfr, axes1[3], markers, sr)
     events_mk_on        = calc_FootOnEventsVel(mk_vel, vfr, axes1[1], direction, minThresh)
     events_force        = calc_ForceEvents(fp_df, 10) # dataframe and force threshold
     
@@ -311,12 +354,15 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         str_list.append(str_string)
         
     # add event ID lists to dataframes
-    events_goldOffT['EventID']  = off_list
-    events_forceOffT['EventID'] = off_list
-    events_markrOffT['EventID'] = off_list
-    events_goldStrT['EventID']  = str_list
-    events_forceStrT['EventID'] = str_list
-    events_markrStrT['EventID'] = str_list
+    try:
+        events_goldOffT['EventID']  = off_list
+        events_forceOffT['EventID'] = off_list
+        events_markrOffT['EventID'] = off_list
+        events_goldStrT['EventID']  = str_list
+        events_forceStrT['EventID'] = str_list
+        events_markrStrT['EventID'] = str_list
+    except:
+        print('stopping here')
     
     # ------------------------- Add lines for events ------------------------------
     fmin = min(meltFP_df['Force_Z'])

@@ -10,9 +10,9 @@ from tkinter import filedialog
 from check_EventTiming import get_EventDiffs as evd
 import pandas as pd
 
-main_directory = r'K:\ViconDatabase\Python Code\1. readC3D_local'
+main_directory = r'K:\ViconDatabase\Python Code\Gait_Event_check'
 x_thresh = 0.35
-data_source = 'SH'
+data_source = 'TD'
 
 def get_c3d_files():
     # Create a Tkinter root window (hidden)
@@ -37,7 +37,6 @@ def get_c3d_files():
 c3d_files_list = get_c3d_files()
 dir_mk = 'X' # a/p marker
 
-# filenamepath = 'K:\\ViconDatabase\\Python Code\\1. readC3D_local\\C3D test files\\TD05MINa03.c3d'
 save_folderpath = r'K:\ViconDatabase\Python Code\2. Event timing plots'
 off_df = pd.DataFrame()
 str_df = pd.DataFrame()
@@ -51,12 +50,16 @@ off_summary = off_df.describe()
 str_summary = str_df.describe()
 
 # Define the output file path
-off_output_file = os.path.join(main_directory, f'SHR_off_summary_threshold-{x_thresh}.csv')  # Update with your desired path
-str_output_file = os.path.join(main_directory, f'SHR_str_summary_threshold-{x_thresh}.csv')
+off_data_file = os.path.join(main_directory, f'{data_source}_off_data_threshold-{x_thresh}.csv')  # Update with your desired path
+str_data_file = os.path.join(main_directory, f'{data_source}_str_data_threshold-{x_thresh}.csv')
+off_summary_file = os.path.join(main_directory, f'{data_source}_off_summary_threshold-{x_thresh}.csv')  
+str_summary_file = os.path.join(main_directory, f'{data_source}_str_summary_threshold-{x_thresh}.csv')
 
 # Save to CSV
-off_summary.to_csv(off_output_file)
-str_summary.to_csv(str_output_file)
+off_df.to_csv(off_data_file)
+str_df.to_csv(str_data_file)
+off_summary.to_csv(off_summary_file)
+str_summary.to_csv(str_summary_file)
 
 
 
