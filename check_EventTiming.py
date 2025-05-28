@@ -45,7 +45,7 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         
         # height must be at least .5 * max
         lpeaks, _ = signal.find_peaks(left_signal, 
-                                     height = 0.5 * max(left_signal),
+                                     height = 0.7 * max(left_signal),
                                      # prominence=0.3,  # Filtering weaker peaks 
                                      # distance=step_rate,  # Preventing step-rate violations 
                                      # width=3  # Ignoring overly wide peaks
@@ -54,7 +54,7 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         Lpeaks = [lpeak for lpeak in lpeaks if left_signal[lpeak] == max(left_signal[max(0, lpeak-round(step_rate/2)):min(len(left_signal), lpeak+round(step_rate/2))])]
         
         rpeaks, _ = signal.find_peaks(right_signal, 
-                                     height = 0.5 * max(right_signal),
+                                     height = 0.7 * max(right_signal),
                                      # prominence=0.3,  # Filtering weaker peaks 
                                      # distance=step_rate,  # Preventing step-rate violations 
                                      # width=3  # Ignoring overly wide peaks

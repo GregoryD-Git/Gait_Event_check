@@ -13,7 +13,7 @@ import os
 
 # Load CSV files into dataframes
 search_string = 'data'
-csv_files = glob.glob(f"K:\\ViconDatabase\\Python Code\\Gait_Event_check\\*{search_string}*.csv")
+csv_files = glob.glob(f"K:\\ViconDatabase\\Python Code\\Gait_Event_check\\Data\\*{search_string}*.csv")
 dataframes = [pd.read_csv(file).assign(source=file.split('\\')[-1][0:6]) for file in csv_files]
 # [print(file.split('\\')) for file in csv_files]
 
