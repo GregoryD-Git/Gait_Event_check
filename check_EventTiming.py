@@ -230,10 +230,12 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
     ###############################################################################
     # --------------------------- Pull marker data --------------------------------
     mk_df       = C3Ddict['Marker Data']
-    if data_source == 'TD':
+    if data_source == 'TD' and subject[0:3] != 'TD0':
         markers = ['LMT1H','LANK','LHEE','RMT1H','RANK','RHEE']
-    else:
+    elif data_source == 'SH':
         markers = ['Left_2nd3rd_MT_Head','LANK','Left_Heel','Right_2nd3rd_MT_Head','RANK','Right_Heel']
+    else:
+        markers = ['LTOE','LANK','LHEE','RTOE','RANK','RHEE']
         
     coordinates = ['X','Z']
     event_ind   = ['On','Off']
@@ -362,7 +364,10 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
         events_forceStrT['EventID'] = str_list
         events_markrStrT['EventID'] = str_list
     except:
-        print('stopping here')
+        print('stopping analysis and moving to the next file')
+        FootOff_df = pd.DataFrame()
+        FootStr_df = pd.DataFrame()
+        return FootOff_df, FootStr_df
     
     # ------------------------- Add lines for events ------------------------------
     fmin = min(meltFP_df['Force_Z'])

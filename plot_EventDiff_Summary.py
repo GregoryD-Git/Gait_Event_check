@@ -38,7 +38,7 @@ my_plot = sns.catplot(
     data=melt_df, 
     x="source", y='Event Diff', 
     order=['SH_off','TD_off','SH_str','TD_str'],
-    hue="source",
+    # hue="source",
     kind="bar"
 )
 

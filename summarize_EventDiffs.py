@@ -12,7 +12,7 @@ import pandas as pd
 
 main_directory = r'K:\ViconDatabase\Python Code\Gait_Event_check'
 x_thresh = 0.35
-data_source = 'TD'
+data_source = 'SH'
 
 def get_c3d_files():
     # Create a Tkinter root window (hidden)
