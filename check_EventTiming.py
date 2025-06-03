@@ -227,13 +227,13 @@ def get_EventDiffs(filenamepath, dir_mk, save_folderpath, x_thresh, data_source)
     
     # add video frames to dataframe
     fp_df['VideoFrames'] = C3Ddict['Analog Data'].VideoFrames
-    ###############################################################################
-    # --------------------------- Pull marker data --------------------------------
+    ###########################################################################
+    # --------------------------- Pull marker data ----------------------------
     mk_df       = C3Ddict['Marker Data']
-    if data_source == 'TD' and subject[0:3] != 'TD0':
-        markers = ['LMT1H','LANK','LHEE','RMT1H','RANK','RHEE']
-    elif data_source == 'SH':
-        markers = ['Left_2nd3rd_MT_Head','LANK','Left_Heel','Right_2nd3rd_MT_Head','RANK','Right_Heel']
+    # if data_source == 'TD' and subject[0:3] != 'TD0':
+    #     markers = ['LTOE','LANK','LHEE','RTOE','RANK','RHEE']
+    if data_source == 'SH':
+        markers = ['Left_2nd3rd_MT_Head','Left_Lateral_Malleolus','Left_Heel','Right_2nd3rd_MT_Head','Right_Lateral_Malleolus','Right_Heel']
     else:
         markers = ['LTOE','LANK','LHEE','RTOE','RANK','RHEE']
         

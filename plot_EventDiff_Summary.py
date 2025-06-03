@@ -15,37 +15,92 @@ import os
 search_string = 'data'
 csv_files = glob.glob(f"K:\\ViconDatabase\\Python Code\\Gait_Event_check\\Data\\*{search_string}*.csv")
 dataframes = [pd.read_csv(file).assign(source=file.split('\\')[-1][0:6]) for file in csv_files]
-# [print(file.split('\\')) for file in csv_files]
 
 # Merge the dataframes
-merged_df = pd.concat(dataframes, ignore_index=True)  # Merge all into one dataframe
+merged_df = pd.concat(dataframes, ignore_index=False)  # Merge all into one dataframe
+# drop the 'unnamed' column
+merged_df.drop(columns=['Unnamed: 0'], inplace=True)
+
+# --------------------------- Plot SHR vs. All TD data ------------------------
+# -----------------------------------------------------------------------------
 cols = merged_df.columns
-datadf = merged_df.drop(columns=[cols[0], 'Subject']).copy()
+# datadf = merged_df.drop(columns=[cols[0], 'Subject']).copy()
 
 # melt dataframe to long-format
-df_cols = [col for col in cols if 'Gold_Marker' in col]
-melt_df = datadf.melt(id_vars=['source'], 
-                      value_vars=df_cols, # column with marker data
+comp = 'Force_Marker'
+melt_df = merged_df.melt(id_vars=['source'], 
+                      value_vars=comp, # column with marker data
                       var_name='Comparison', # column with marker names
                       value_name='Event Diff')
 
-# melt_df["event"] = melt_df["source"].apply(lambda x: "foot_off" if "_off" in x else "foot_strike")
-
-# Plot summary data
+# Plot summary TD vs SHR data
 sns.set_style("whitegrid")
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-my_plot = sns.catplot(
+SH_TD_plot = sns.barplot(
     data=melt_df, 
     x="source", y='Event Diff', 
+    ax=axes[0],
+    palette='viridis',
     order=['SH_off','TD_off','SH_str','TD_str'],
-    # hue="source",
-    kind="bar"
+    hue="source",
 )
 
-# Show the plot
-plt.title("Summary of Event differences")
+# --------------------------- Plot Invididual Site Data -----------------------
+# -----------------------------------------------------------------------------
+# Make 'Site' column using the first two elements of the 'Subject' column name
+merged_df['Site'] = merged_df['Subject'].str.slice(0,2)
+# drop 'Subject' column
+merged_df.drop(columns=['Subject'], inplace=True)
+
+# Update site names
+merged_df.loc[merged_df['Site'] == 'Pa', 'Site'] = 'SH'
+merged_df.loc[merged_df['Site'] == 'TD', 'Site'] = 'SC'
+
+# Make only foot off events dataframe, then melt
+off_site_df = merged_df[(merged_df['source'] == 'SH_off') | (merged_df['source'] == 'TD_off')].copy()
+melt_Offdf = off_site_df.melt(id_vars='Site',
+                              value_vars=['Gold_Marker','Force_Marker','Gold_Force'],
+                              var_name='Comparison',
+                              value_name='Event Diff')
+
+siteOff_plot = sns.barplot(
+    data=melt_Offdf[melt_Offdf['Comparison'] == comp], 
+    x="Site", y='Event Diff', 
+    ax=axes[1],
+    palette='viridis',
+    hue="Site",
+)
+
+# Make only foot strike events dataframe, then melt
+str_site_df = merged_df[(merged_df['source'] == 'SH_str') | (merged_df['source'] == 'TD_str')].copy()
+melt_Strdf = str_site_df.melt(id_vars='Site',
+                              value_vars=['Gold_Marker','Force_Marker','Gold_Force'],
+                              var_name='Comparison',
+                              value_name='Event Diff')
+
+siteStr_plot = sns.barplot(
+    data=melt_Strdf[melt_Strdf['Comparison'] == comp], 
+    x="Site", y='Event Diff', 
+    ax=axes[2],
+    palette='viridis',
+    hue="Site",
+)
+
+# Set subplot titles
+axes[0].set_title('Summary Event Diff')
+axes[1].set_title('Site Foot Off Event Diff')
+axes[2].set_title('Site Foot Strike Event Diff')
+
+fig.suptitle(f"Event Difference Comparison {comp}", fontsize=16)
+plt.tight_layout()
 plt.show()
 
-png_filename = 'Event_SHR-TD_Comparison.png'
+png_filename = f'Event_Comparison_{comp}.png'
 save_png_path = os.path.join('K:\\ViconDatabase\\Python Code\\Gait_Event_check\\', png_filename)
-my_plot.savefig(save_png_path, dpi=300, bbox_inches='tight')
+fig.savefig(save_png_path, dpi=300, bbox_inches='tight')
+
+
+
+
+
