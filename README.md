@@ -4,6 +4,16 @@ This project has two primary functions.
 2. To compare events identified from the auto-detect method with both event identified manually (i.e. Gold Standard) or by force plate threshold of 10 Newtons.
 
 # Overview of Auto-Detection
+This project is the start of a larger machine learning project to auto-detect events for clinical walking trials. The below auto-detect operations represent a proof-of-concept using simple feature extraction of gait event-related data transformations. Future work will involve more sophisticaed feature extraction for use in the machine learning model.
+
+The first plot here shows how a simple method can quite accurately identify gait events in a typically developing cohort. The data compared is that of typical walkers at a single site versus a larger dataset of typically developing data pre-validated and used in clinical capture. 
+
+This plot shows cross-validation (between sites) as well as between methods (force, auto, and manual).
+
+![Results of Auto-Detect v. Manual Identification](Event_Comparison_Gold_Marker.png)
+
+## Summary of Auto-Detect Methods
+
 ## Foot Contact
 When walking in the laboratory, the markers on the foot move in space and time through the lab. When the foot swings forward to advance for the next step, anterior velocities become large shortly after initial foot off then rapidly slow until the foot contacts the ground. After initial contact, the anterior marker velocities are approximately zero for a short time before they accelerate again for the next step.
 
