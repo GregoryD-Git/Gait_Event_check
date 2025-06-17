@@ -15,6 +15,8 @@ The panel on the left shows the results of comparions between a single site 'SH'
 
 The middle and right panels demonstrate the consistency between all labs that have been tested for foot off events (middle panel) and foot contact (also called 'Strike' events, right panel).
 
+Event differences are in the units of the number of frames of camera data, captured at 100 Hz.
+
 ![Results of Auto-Detect v. Manual Identification](Event_Comparison_Gold_Marker.png)
 
 ## Summary of Auto-Detect Methods
