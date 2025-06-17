@@ -10,6 +10,11 @@ The first plot here shows how a simple method can quite accurately identify gait
 
 This plot shows cross-validation (between sites) as well as between methods (force, auto, and manual).
 
+### Summary Plot
+The panel on the left shows the results of comparions between a single site 'SH' versus the validated dataset 'TD' for foot off '_off' and foot contact '_str' events.
+
+The middle and right panels demonstrate the consistency between all labs that have been tested for foot off events (middle panel) and foot contact (also called 'Strike' events, right panel).
+
 ![Results of Auto-Detect v. Manual Identification](Event_Comparison_Gold_Marker.png)
 
 ## Summary of Auto-Detect Methods
