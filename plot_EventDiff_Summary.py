@@ -27,7 +27,7 @@ cols = merged_df.columns
 # datadf = merged_df.drop(columns=[cols[0], 'Subject']).copy()
 
 # melt dataframe to long-format
-comp = 'Force_Marker'
+comp = 'Gold_Marker'
 melt_df = merged_df.melt(id_vars=['source'], 
                       value_vars=comp, # column with marker data
                       var_name='Comparison', # column with marker names
@@ -91,6 +91,11 @@ siteStr_plot = sns.barplot(
 axes[0].set_title('Summary Event Diff')
 axes[1].set_title('Site Foot Off Event Diff')
 axes[2].set_title('Site Foot Strike Event Diff')
+
+# Set y-axis limits
+axes[0].set_ylim(0,2.5)
+axes[1].set_ylim(0,2.5)
+axes[2].set_ylim(0,2.5)
 
 fig.suptitle(f"Event Difference Comparison {comp}", fontsize=16)
 plt.tight_layout()
