@@ -10,7 +10,7 @@ from tkinter import filedialog
 from check_EventTiming import get_EventDiffs as evd
 import pandas as pd
 
-main_directory = r'K:\ViconDatabase\Python Code\Gait_Event_check'
+main_directory = r'K:\ViconDatabase\Python Code\Gait_Event_check\Theia Test Files'
 x_thresh = 0.35
 data_source = 'TD'
 
