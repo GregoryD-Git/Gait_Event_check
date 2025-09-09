@@ -1,7 +1,13 @@
 # Gait_Event_check
 This project has two primary functions.
 1. To auto-detect gait events - When the foot of a walker hits the ground (i.e. foot contact) and when the foot leaves the ground (i.e. foot off).
-2. To compare events identified from the auto-detect method with both event identified manually (i.e. Gold Standard) or by force plate threshold of 10 Newtons.
+'''python
+# get_AutoEvents.py
+'''
+3. To compare events identified from the auto-detect method with both event identified manually (i.e. Gold Standard) or by force plate threshold of 10 Newtons.
+'''python
+# check_EventTiming.py
+'''
 
 # Overview of Auto-Detection
 This project is the start of a larger machine learning project to auto-detect events for clinical walking trials. The below auto-detect operations represent a proof-of-concept using simple feature extraction of gait event-related data transformations. Future work will involve more sophisticaed feature extraction for use in the machine learning model.
