@@ -13,7 +13,12 @@ This project is the start of a larger machine learning project to auto-detect ev
 
 The first plot here shows how a simple method can quite accurately identify gait events in a typically developing cohort. The data compared is that of typical walkers at a single site versus a larger dataset of typically developing data pre-validated and used in clinical capture. 
 
-This plot shows cross-validation (between sites) as well as between methods (force, auto, and manual).
+### X Marks the Spot
+The below plot demonstrates the foot-off (top) and foot on (bottom) events detected from the program for a sample data file.
+
+![Example event detection using segment velocities](Example_Auto_Detect.png)
+
+The next plot shows cross-validation (between sites) as well as between methods (force, auto, and manual).
 
 ### Summary Plot
 The panel on the left shows the results of comparions between a single site 'SH' versus the validated dataset 'TD' for foot off '_off' and foot contact '_str' events.
